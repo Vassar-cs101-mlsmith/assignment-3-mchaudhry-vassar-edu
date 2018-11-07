@@ -4,7 +4,7 @@
 ; CMPU-101 
 ; Fall 2018
 ; Assign 3
-; <your name> 
+; <Mafaz Chaudhry> 
 ;
 ; Description: Uses a list of bouncing balls to animate many balls
 ; of different sizes and colors, all moving in the same scene at 
@@ -49,14 +49,23 @@
 ; if you like to define the rest.
 (define BALL-AT-LEFT 
   (make-ball (circle (+ RADIUS 4) "solid" "teal")
-             (+ RADIUS 4) (/ HEIGHT 2) -4 4)) 
-
+             (+ RADIUS 4) (/ HEIGHT 2) -4 4))
+(define BALL-AT-RIGHT 
+  (make-ball (circle (+ RADIUS 2) "solid" "green")
+             (- WIDTH (+ RADIUS 2)) (/ HEIGHT 2) 5 5))
+(define BALL-AT-TOP 
+  (make-ball (circle (+ RADIUS 3) "solid" "sky blue")
+             (/ WIDTH 2) (+ RADIUS 3) -3 -3))
+(define BALL-AT-BOTTOM 
+  (make-ball (circle (+ RADIUS 5) "solid" "red")
+             (/ WIDTH 2) (- HEIGHT (+ RADIUS 5)) -7 7))
 
 ; Define INIT-LOB to be a list-of-balls:
 ; You will use this to be the initial state of the world.
 ; I've defined it to be the empty list, but you should define it
 ; to contain the four example ball CONSTANTS you just defined. 
-(define INIT-LOB '()) 
+
+(define INIT-LOB (list BALL-AT-LEFT BALL-AT-RIGHT BALL-AT-TOP BALL-AT-BOTTOM))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -97,55 +106,149 @@
 
 ; ball -> number
 ; computes the radius of given ball
-(define (ball-radius b) ...)
+(define (ball-radius b)
+  (/ (image-width (ball-im b)) 2))
+
+(check-expect (ball-radius BALL-AT-TOP) 28)
+(check-expect (ball-radius BALL-AT-BOTTOM) 30)
+(check-expect (ball-radius BALL-AT-LEFT) 29)
+(check-expect (ball-radius BALL-AT-RIGHT) 27)
 
 ; ball -> boolean
 ; determines whether the ball reached the top edge of scene
-(define (top-edge? b) ...)
+(define (top-edge? b)
+  (>= (ball-radius b) (ball-y b)))
+
+(check-expect (top-edge? BALL-AT-TOP) #true)
+(check-expect (top-edge? BALL-AT-BOTTOM) #false)
+(check-expect (top-edge? BALL-AT-LEFT) #false)
+(check-expect (top-edge? BALL-AT-RIGHT) #false)
 
 ; ball -> boolean
 ; determines whether the ball reached the bottom edge of scene
-(define (bottom-edge? b) ...)
+(define (bottom-edge? b)
+  (<= (- HEIGHT (ball-radius b)) (ball-y b)))
+
+(check-expect (bottom-edge? BALL-AT-TOP) #false)
+(check-expect (bottom-edge? BALL-AT-BOTTOM) #true)
+(check-expect (bottom-edge? BALL-AT-LEFT) #false)
+(check-expect (bottom-edge? BALL-AT-RIGHT) #false)
+
 
 ; ball -> boolean
 ; determines whether the ball reached the left edge of scene
-(define (left-edge? b) ...)
+(define (left-edge? b)
+  (>= (ball-radius b) (ball-x b)))
+
+(check-expect (left-edge? BALL-AT-TOP) #false)
+(check-expect (left-edge? BALL-AT-BOTTOM) #false)
+(check-expect (left-edge? BALL-AT-LEFT) #true)
+(check-expect (left-edge? BALL-AT-RIGHT) #false)
 
 ; ball -> boolean
 ; determines whether the ball reached the right edge of scene
-(define (right-edge? b) ...)
+(define (right-edge? b)
+  (<= (- WIDTH (ball-radius b)) (ball-x b)))
+
+(check-expect (right-edge? BALL-AT-TOP) #false)
+(check-expect (right-edge? BALL-AT-BOTTOM) #false)
+(check-expect (right-edge? BALL-AT-LEFT) #false)
+(check-expect (right-edge? BALL-AT-RIGHT) #true)
 
 ; ball -> ball
 ; reverse ball's up-down direction   
-(define (reverse-up-down b) ...)
+(define (reverse-up-down b)
+  (make-ball (ball-im b) (ball-x b) (ball-y b)
+             (ball-dx b) (* (ball-dy b) -1)))
+
+
+(check-expect (reverse-up-down (make-ball (circle (+ RADIUS 4) "solid" "teal")
+             (+ RADIUS 4) (/ HEIGHT 2) -4 4)) (make-ball (circle (+ RADIUS 4) "solid" "teal")
+             (+ RADIUS 4) (/ HEIGHT 2) -4 -4))
+(check-expect (reverse-up-down (make-ball (circle (+ RADIUS 4) "solid" "teal")
+             (+ RADIUS 4) (/ HEIGHT 2) -4 -4)) (make-ball (circle (+ RADIUS 4) "solid" "teal")
+             (+ RADIUS 4) (/ HEIGHT 2) -4 4))
 
 ; ball -> ball
 ; reverse ball's left-right direction   
-(define (reverse-left-right b) ...)
+(define (reverse-left-right b)
+  (make-ball (ball-im b) (ball-x b) (ball-y b)
+             (* (ball-dx b) -1) (ball-dy b)))
+
+(check-expect (reverse-left-right (make-ball (circle (+ RADIUS 4) "solid" "teal")
+             (+ RADIUS 4) (/ HEIGHT 2) -4 4)) (make-ball (circle (+ RADIUS 4) "solid" "teal")
+             (+ RADIUS 4) (/ HEIGHT 2) 4 4))
+(check-expect (reverse-left-right (make-ball (circle (+ RADIUS 4) "solid" "teal")
+             (+ RADIUS 4) (/ HEIGHT 2) 4 -4)) (make-ball (circle (+ RADIUS 4) "solid" "teal")
+             (+ RADIUS 4) (/ HEIGHT 2) -4 -4))
 
 ; ball -> ball
 ; changes direction of given ball if it hit the top or bottom edge
-(define (bounce-up-down b) ...)
+(define (bounce-up-down b)
+  (cond
+    [(or (top-edge? b) (bottom-edge? b)) (reverse-up-down b)]
+    [else b]))
 
+(check-expect (bounce-up-down BALL-AT-TOP) (reverse-up-down BALL-AT-TOP))
+(check-expect (bounce-up-down BALL-AT-BOTTOM) (reverse-up-down BALL-AT-BOTTOM))
+(check-expect (bounce-up-down BALL-AT-LEFT) (make-ball (circle (+ RADIUS 4) "solid" "teal")
+                                                       (+ RADIUS 4) (/ HEIGHT 2) -4 4))
+(check-expect (bounce-up-down BALL-AT-RIGHT) (make-ball (circle (+ RADIUS 2) "solid" "green")
+                                                        (- WIDTH (+ RADIUS 2)) (/ HEIGHT 2) 5 5))
 ; ball -> ball
 ; changes direction of given ball if it hit the left or right edge
-(define (bounce-left-right b) ...)
+(define (bounce-left-right b)
+  (cond
+    [(or (left-edge? b) (right-edge? b)) (reverse-left-right b)]
+    [else b]))
+
+(check-expect (bounce-left-right BALL-AT-LEFT) (reverse-left-right BALL-AT-LEFT))
+(check-expect (bounce-left-right BALL-AT-RIGHT)(reverse-left-right BALL-AT-RIGHT))
+(check-expect (bounce-left-right BALL-AT-TOP) (make-ball (circle (+ RADIUS 3) "solid" "sky blue")
+                                                         (/ WIDTH 2) (+ RADIUS 3) -3 -3))
+(check-expect (bounce-left-right BALL-AT-BOTTOM)(make-ball (circle (+ RADIUS 5) "solid" "red")
+                                                           (/ WIDTH 2) (- HEIGHT (+ RADIUS 5)) -7 7) ) 
 
 ; ball -> ball
 ; moves the given ball by its dx and dy amounts
-(define (move-ball b) ...)
+(define (move-ball b)
+  (make-ball (ball-im b) (+ (ball-dx b)(ball-x b)) (+(ball-dy b) (ball-y b))
+             (ball-dx b) (ball-dy b)))
+
+(check-expect (move-ball BALL-AT-BOTTOM) (make-ball (ball-im BALL-AT-BOTTOM) 243 277 -7 7))
+(check-expect (move-ball BALL-AT-TOP) (make-ball (ball-im BALL-AT-TOP)  247 25 -3 -3))
+(check-expect (move-ball BALL-AT-LEFT) (make-ball (ball-im BALL-AT-LEFT)  25 154 -4 4))
+(check-expect (move-ball BALL-AT-RIGHT) (make-ball (ball-im BALL-AT-RIGHT)  478 155 5 5))
 
 ; list-of-balls -> list-of-balls
 ; moves (and possibly bounces) each ball in given list
-(define (move-list-of-balls lob) ...)
+(define (move-list-of-balls lob)
+  (cond
+    [(empty? lob) '()] 
+    [else (cons (move-ball (bounce-left-right (bounce-up-down (first lob))))
+                (move-list-of-balls (rest lob)))]))
+
+(check-expect (move-list-of-balls '()) '())
+(check-expect (move-list-of-balls (cons BALL-AT-TOP (cons BALL-AT-BOTTOM '())))(cons (make-ball (ball-im BALL-AT-TOP)
+                                                                                                (+ (ball-dx BALL-AT-TOP)(ball-x BALL-AT-TOP))
+                                                                                                (-(ball-y BALL-AT-TOP) (ball-dy BALL-AT-TOP))
+                                                                                                (ball-dx BALL-AT-TOP) (* (ball-dy BALL-AT-TOP) -1)) (cons (make-ball (ball-im BALL-AT-BOTTOM)
+                                                                                                                                                                     (+ (ball-dx BALL-AT-BOTTOM)(ball-x BALL-AT-BOTTOM))
+                                                                                                                                                                     (-(ball-y BALL-AT-BOTTOM) (ball-dy BALL-AT-BOTTOM))
+                                                                                                                                                                     (ball-dx BALL-AT-BOTTOM) (* (ball-dy BALL-AT-BOTTOM) -1))'())))
+
 
 ; ball image -> image
 ; renders given ball b on given background bg
-(define (render-ball b bg) ...)
+(define (render-ball b bg)
+  (place-image
+   (ball-im b) (ball-x b) (ball-y b) bg))
+
+(check-expect (render-ball BALL-AT-BOTTOM BACKGROUND) (place-image (ball-im BALL-AT-BOTTOM) (ball-x BALL-AT-BOTTOM) (ball-y BALL-AT-BOTTOM) BACKGROUND))
   
 ; list-of-balls -> image 
 ; produces image of each ball at each given current position on
-; background.
+; background. 
 ; (Yes, I provided this function for you! You shouldn't have to
 ;  touch it if you've correctly implemented the functions above.)
 (define (render-balls lob) 
@@ -157,7 +260,7 @@
 ; Once you've implemented move-list-of-balls, uncomment on-tick below.
 (define (main w)
   (big-bang w
-            ;(on-tick move-list-of-balls 1/28) 
+            (on-tick move-list-of-balls 1/28) 
             (to-draw render-balls)))
 
 ; Run program automatically, or type this in Interactions Pane:
